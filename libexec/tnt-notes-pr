@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+declare BRANCH=${1:-HEAD}
+if ! git rev-parse $BRANCH &>/dev/null; then
+    if ! git rev-parse origin/$BRANCH &>/dev/null; then
+        echo "Unknown ref $BRANCH"
+        exit 1
+    fi
+    BRANCH=origin/$BRANCH
+fi
+declare FORKED_BRANCH=${2:-origin/staging}
+declare BASE=$(git merge-base --fork-point $FORKED_BRANCH $BRANCH)
+
+git log --show-notes=\* $BASE..$BRANCH --pretty=format:"%N" | grep -v \^\$
