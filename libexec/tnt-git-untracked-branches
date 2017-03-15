@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+declare REMOTE=${1:-origin}
+
+git branch | grep -v \* | xargs -I BR git rev-parse ${REMOTE}/BR 2>/dev/null | grep \^${REMOTE}/ | sed "s,${REMOTE}/,,g"
