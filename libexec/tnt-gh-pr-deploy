@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Usage: tnt gh-pr-deploy <BRANCH_NAME>
+# Summary: Creates a new pull-request for deployment (merge into master branch)
+
+set -e
+
+_require() {
+	if ! which $1 &>/dev/null; then
+		echo "Command required to proceed: \"$1\""
+		echo "$2"
+		exit 1
+	fi
+}
+
+_require hub "Please check https://hub.github.com/ for installation."
+_require stepup "Use \`gem install step-up\` for installation."
+
+if ! ruby -r step-up -e 'exit(Gem::Version.new(StepUp::VERSION) >= Gem::Version.new("0.9.11") ? 0 : 1)'
+then
+	echo "Invalid step-up version"
+	exit 1
+fi
+
+[ $# -eq 1 ] || tnt help gh-pr-deploy && exit 0
+
+declare BRANCH=$1
+if ! git rev-parse origin/$BRANCH &>/dev/null; then
+    echo "Unknown ref $BRANCH"
+    exit 1
+fi
+BRANCH=$BRANCH
+
+declare LAST_RELEASE=`stepup version show origin/master`
+declare NEXT_RELEASE=`echo $LAST_RELEASE | stepup version show origin/$BRANCH --next-release`
+declare WHATS_NEW=`stepup notes show origin/$BRANCH`
+
+[ $(wc -l <<<"$WHATS_NEW") -ge 2 ] || ( echo "No release notes found"; exit 1 )
+
+cat <<-PRMESSAGE > PR_MESSAGE.txt
+Implantação $NEXT_RELEASE
+Alterações desde $LAST_RELEASE
+$WHATS_NEW
+PRMESSAGE
+
+hub pull-request -F PR_MESSAGE.txt -b master -h $BRANCH -o
