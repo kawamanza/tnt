@@ -12,6 +12,8 @@ _require() {
 	fi
 }
 
+[ $# -eq 1 ] || ( tnt help gh-pr-deploy; exit 0 )
+
 _require hub "Please check https://hub.github.com/ for installation."
 _require stepup "Use \`gem install step-up\` for installation."
 
@@ -20,8 +22,6 @@ then
 	echo "Invalid step-up version"
 	exit 1
 fi
-
-[ $# -eq 1 ] || tnt help gh-pr-deploy && exit 0
 
 declare BRANCH=$1
 if ! git rev-parse origin/$BRANCH &>/dev/null; then
