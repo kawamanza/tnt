@@ -30,7 +30,7 @@ if ! git rev-parse origin/$BRANCH &>/dev/null; then
 fi
 BRANCH=$BRANCH
 
-declare LAST_RELEASE=`stepup version show origin/master`
+declare LAST_RELEASE=`stepup version show origin/master | cut -d'+' -f1`
 declare NEXT_RELEASE=`echo $LAST_RELEASE | stepup version show origin/$BRANCH --next-release`
 declare WHATS_NEW=`stepup notes show origin/$BRANCH`
 
