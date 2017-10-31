@@ -4,6 +4,8 @@
 
 set -e
 
+[ ! -f ~/.tntrc ] || source ~/.tntrc
+
 _require() {
 	if ! which $1 &>/dev/null; then
 		echo "Command required to proceed: \"$1\""
@@ -36,10 +38,10 @@ declare WHATS_NEW=`stepup notes show origin/$BRANCH`
 
 [ $(wc -l <<<"$WHATS_NEW") -ge 2 ] || ( echo "No release notes found"; exit 1 )
 
-cat <<-PRMESSAGE > PR_MESSAGE.txt
-Implantação $NEXT_RELEASE
-Alterações desde $LAST_RELEASE
+cat <<-PRMESSAGE > /tmp/PR_MESSAGE.txt
+Deployment $NEXT_RELEASE
+Changelog since $LAST_RELEASE
 $WHATS_NEW
 PRMESSAGE
 
-hub pull-request -F PR_MESSAGE.txt -b master -h $BRANCH -o
+hub pull-request -F /tmp/PR_MESSAGE.txt -b master -h $BRANCH -o
