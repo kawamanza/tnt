@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: tnt gh-pr-deploy <BRANCH_NAME>
+# Usage: tnt gh-release-notes <BRANCH_NAME>
 # Summary: Creates a new pull-request for deployment (merge into master branch)
 
 set -e
@@ -14,9 +14,12 @@ _require() {
 	fi
 }
 
-[ $# -eq 1 ] || ( tnt help gh-pr-deploy; exit 0 )
+_json_escape () {
+    printf '%s' "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
 
-_require hub "Please check https://hub.github.com/ for installation."
+[ $# -ge 1 ] || ( tnt help gh-pr-deploy; exit 0 )
+
 _require stepup "Use \`gem install step-up\` for installation."
 
 if ! ruby -r step-up -e 'exit(Gem::Version.new(StepUp::VERSION) >= Gem::Version.new("0.9.11") ? 0 : 1)'
@@ -35,17 +38,24 @@ BRANCH=$BRANCH
 declare LAST_RELEASE=`stepup version show origin/master | cut -d'+' -f1`
 declare NEXT_RELEASE=`echo $LAST_RELEASE | stepup version show origin/$BRANCH --next-release`
 declare WHATS_NEW=`stepup notes show origin/$BRANCH`
+declare JIRA_VERSION
+
+if [ ! -z $2 ]; then
+	JIRA_VERSION="/ \`$2\`"
+fi
 
 [ $(wc -l <<<"$WHATS_NEW") -ge 2 ] || ( echo "No release notes found"; exit 1 )
 
-cat <<-PRMESSAGE > /tmp/PR_MESSAGE.txt
-Deployment $NEXT_RELEASE
-Changelog since $LAST_RELEASE
+declare MSG="Deployment *$(basename $PWD)* \`$NEXT_RELEASE\` $JIRA_VERSION
+\`\`\`
 $WHATS_NEW
-PRMESSAGE
-
-hub pull-request -F /tmp/PR_MESSAGE.txt -b master -h $BRANCH -o
+\`\`\`"
 
 if [ "$NOTIFY_SLACK" == "true" ] && [ ! -z $SLACK_POST_URL ] && [ ! -z $SLACK_RELEASE_CHANNEL ]; then
-	tnt gh-release-notes "$1"
+	curl -v \
+		-H 'Content-Type: application/json' \
+		-d "{\"channel\":\"$SLACK_RELEASE_CHANNEL\",\"text\":$(_json_escape "$MSG")}" \
+		$SLACK_POST_URL &>/tmp/tnt-gh-release-notes.log
+else
+	echo "$MSG"
 fi
