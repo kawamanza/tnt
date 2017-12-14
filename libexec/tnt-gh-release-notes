@@ -18,7 +18,7 @@ _json_escape () {
     printf '%s' "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
-[ $# -ge 1 ] || ( tnt help gh-pr-deploy; exit 0 )
+[ $# -ge 1 ] || ( tnt help gh-release-notes; exit 0 )
 
 _require stepup "Use \`gem install step-up\` for installation."
 

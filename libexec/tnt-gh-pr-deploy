@@ -14,7 +14,7 @@ _require() {
 	fi
 }
 
-[ $# -eq 1 ] || ( tnt help gh-pr-deploy; exit 0 )
+[ $# -ge 1 ] || ( tnt help gh-pr-deploy; exit 0 )
 
 _require hub "Please check https://hub.github.com/ for installation."
 _require stepup "Use \`gem install step-up\` for installation."
@@ -47,5 +47,5 @@ PRMESSAGE
 hub pull-request -F /tmp/PR_MESSAGE.txt -b master -h $BRANCH -o
 
 if [ "$NOTIFY_SLACK" == "true" ] && [ ! -z $SLACK_POST_URL ] && [ ! -z $SLACK_RELEASE_CHANNEL ]; then
-	tnt gh-release-notes "$1"
+	tnt gh-release-notes "$1" $2
 fi
