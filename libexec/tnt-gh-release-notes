@@ -46,15 +46,18 @@ fi
 
 [ $(wc -l <<<"$WHATS_NEW") -ge 2 ] || ( echo "No release notes found"; exit 1 )
 
-declare MSG="Deployment *$(basename $PWD)* \`$NEXT_RELEASE\` $JIRA_VERSION
+declare REPO_NAME=`basename $(git remote get-url origin) | cut -d'.' -f 1`
+declare MSG="Deployment *$REPO_NAME* \`$NEXT_RELEASE\` $JIRA_VERSION
 \`\`\`
 $WHATS_NEW
 \`\`\`"
 
+declare EXECUTOR_NAME=$(git config user.name 2>/dev/null || git log -n1 --format="%aN")
+
 if [ "$NOTIFY_SLACK" == "true" ] && [ ! -z $SLACK_POST_URL ] && [ ! -z $SLACK_RELEASE_CHANNEL ]; then
 	curl -v \
 		-H 'Content-Type: application/json' \
-		-d "{\"channel\":\"$SLACK_RELEASE_CHANNEL\",\"text\":$(_json_escape "$MSG")}" \
+		-d "{\"channel\":\"$SLACK_RELEASE_CHANNEL\",\"text\":$(_json_escape "$MSG"),\"icon_emoji\":\":ship:\",\"username\":$(_json_escape "$EXECUTOR_NAME (Deployer)")}" \
 		$SLACK_POST_URL &>/tmp/tnt-gh-release-notes.log
 else
 	echo "$MSG"
