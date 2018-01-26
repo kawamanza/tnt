@@ -46,7 +46,7 @@ fi
 
 [ $(wc -l <<<"$WHATS_NEW") -ge 2 ] || ( echo "No release notes found"; exit 1 )
 
-declare REPO_NAME=`basename $(git remote get-url origin) | cut -d'.' -f 1`
+declare REPO_NAME=`basename $(git remote get-url origin) | sed 's,.git$,,'`
 declare MSG="Deployment *$REPO_NAME* \`$NEXT_RELEASE\` $JIRA_VERSION
 \`\`\`
 $WHATS_NEW
