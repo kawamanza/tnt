@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Usage: tnt git-fetch
+# Summary: Fetches all remote metadata (with prune option)
+
+for r in $(git remote); do
+	echo + git fetch $r --prune
+	git fetch $r --prune
+done
