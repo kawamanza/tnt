@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Usage: tnt speedtest
+# Summary: Internet speed verification
+
+curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -
