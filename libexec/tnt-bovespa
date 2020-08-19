@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Usage: tnt bovespa
+# Summary: Load Bovespa average price
+
+if ! type bovespa &>/dev/null; then
+	echo "Please install bovespa NPM module: npm i -g bovespa"
+	exit 1
+fi
+
+if [ ! -f bovespa.txt ]; then
+	echo "bovespa.txt not found"
+	exit 1
+fi
+
+declare yesterday=$(node -e 'console.log(new Date((+new Date)-(3600000*24)))' | cut -dT -f1)
+declare dateref=${1:-$yesterday}
+declare result
+
+[ ! -f bovespa.$dateref.txt ] || rm bovespa.$dateref.txt
+
+for f in $(cat bovespa.txt); do
+	echo -n "$f	" >> bovespa.$dateref.txt
+	result="$(bovespa $f --date $dateref)"
+	echo "$result"
+	echo '=========='
+	result="$(echo "$result" | grep Average | cut -d' ' -f2)"
+	echo "$result" >> bovespa.$dateref.txt
+done
