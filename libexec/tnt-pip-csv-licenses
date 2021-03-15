@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import pathlib
+import csv
+
+
+def dependencies():
+    for fname in pathlib.Path('/tmp').glob('tmp_pyegg_*.txt'):
+        content = dict(lib=None, nlib=None, license="UNKNOWN", homepage=None, projects=[])
+        with open(fname, 'r') as file:
+            for line in file.readlines():
+                line = line.strip()
+                if line.startswith('Name:'):
+                    content['lib'] = line[6:]
+                    content['nlib'] = line[6:].lower()
+                elif line.startswith('License:'):
+                    content['license'] = line[9:]
+                elif line.startswith('Home-page:'):
+                    content['homepage'] = line[11:]
+                elif line:
+                    content['projects'].append(line)
+        yield content
+
+
+def build_csv_data():
+    headers = ['Python Lib', 'License', 'Home Page']
+    rows = []
+    projects = set()
+    for dep in dependencies():
+        rows.append([dep['lib'], dep['license'], dep['homepage'], dep['nlib'], {k: 'X' for k in dep['projects']}])
+        projects = projects | set(dep['projects'])
+
+    projects = sorted(projects)
+    rows.sort(key=lambda x: x[3] or x[0])
+    rows = [r[0:3] + [r[4].get(k) for k in projects] for r in rows]
+    return {'headers': headers + projects, 'rows': rows}
+
+
+with open('/tmp/inventory.csv', 'w') as csv_file:
+    writer = csv.writer(csv_file, delimiter='\t', lineterminator='\n')
+    libs = build_csv_data()
+    writer.writerow(libs['headers'])
+    writer.writerows(libs['rows'])
