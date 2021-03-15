@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+die() {
+    echo 1>&2 $1
+    exit 1
+}
+
+declare PYEGG_DETAIL
+
+rm -f /tmp/tmp_pyegg_*
+
+
+# prepare file with this command...
+# find . -name requirements.txt > ./test-projects.txt
+for f in $( cat test-projects.txt ); do
+    for g in $( cat $f | sed 's,[#~><=; [].*,,' | sed 's,^-.*,,' ); do
+        echo $f $g
+        if [ ! -f /tmp/tmp_pyegg_$g.txt ]; then
+            PYEGG_DETAIL="$(pip show $g)"
+            if [ $? -ne 0 ]; then
+                echo "> $g not installed. Installing..."
+                pip install $g
+                [ $? -eq 0 ] || die "Could not install egg $g"
+            fi
+            echo "Name: $g" > /tmp/tmp_pyegg_$g.txt
+            echo "$PYEGG_DETAIL" | grep 'License:' >> /tmp/tmp_pyegg_$g.txt
+            echo "$PYEGG_DETAIL" | grep 'Home-page:' >> /tmp/tmp_pyegg_$g.txt
+            echo "" >> /tmp/tmp_pyegg_$g.txt
+        fi
+        echo $f | xargs dirname | cut -d'/' -f2 >>  /tmp/tmp_pyegg_$g.txt
+    done
+    echo '=========='
+done
