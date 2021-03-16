@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+
+if [ -z $1 ] && [ ! -f all-subgroups.json ]; then
+    echo Base group ID expected
+    exit 1
+fi
+
+fetch_subgroups() {
+    curl --header "PRIVATE-TOKEN: $GITLAB_PVT_TOKEN" \
+        "https://gitlab.com/api/v4/groups/$1/subgroups" > all-subgroups.json
+}
+
+fetch_projects() {
+    curl --header "PRIVATE-TOKEN: $GITLAB_PVT_TOKEN" \
+        "https://gitlab.com/api/v4/groups/$1/projects" > $2/all-projects.json
+}
+
+die() {
+    echo $1
+    exit 1
+}
+
+[ -f all-subgroups.json ] || fetch_subgroups $1
+
+declare group
+declare project
+for ref in $(cat all-subgroups.json | jq '.[] | .full_path, .id'); do
+    if echo "$ref" | grep '"' &>/dev/null; then
+        echo + Checking out projects of group $ref
+        group=$( echo $ref | sed 's,",,g' )
+        mkdir -p $group
+        continue
+    fi
+    [ -f $group/all-projects.json ] || fetch_projects $ref $group
+    for repo in $(cat $group/all-projects.json | jq '.[].ssh_url_to_repo' | sed 's,",,g' ); do
+        project=$( echo $repo | sed 's,.*/,,' | sed 's,.git$,,' )
+        echo + git clone $repo $group/$project
+        if [ ! -d $group/$project ]; then
+            git clone $repo $group/$project #|| die "Fail to clone project $repo"
+        fi
+    done
+done
