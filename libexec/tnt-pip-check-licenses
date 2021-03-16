@@ -27,7 +27,7 @@ for f in $( cat test-projects.txt ); do
             echo "$PYEGG_DETAIL" | grep 'Home-page:' >> /tmp/tmp_pyegg_$g.txt
             echo "" >> /tmp/tmp_pyegg_$g.txt
         fi
-        echo $f | xargs dirname | cut -d'/' -f2 >>  /tmp/tmp_pyegg_$g.txt
+        dirname $f | sed 's,.*/,,' >>  /tmp/tmp_pyegg_$g.txt
     done
     echo '=========='
 done
