@@ -41,3 +41,5 @@ with open('/tmp/python-inventory.csv', 'w') as csv_file:
     libs = build_csv_data()
     writer.writerow(libs['headers'])
     writer.writerows(libs['rows'])
+
+print('Check /tmp/python-inventory.csv to see the report.')

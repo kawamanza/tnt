@@ -4,4 +4,10 @@ if ! which license-checker &>/dev/null; then
     npm install -g license-checker
 fi
 
-license-checker --direct --production --csv | sed 's/@[^@"]\+"/"/' | sed 's/","/\t/g' | sed 's,",,g' >> /tmp/nodejs-inventory.csv
+license-checker --direct --production --csv \
+    | sed 's/@[^@"]\+"/"/' \
+    | sed 's/","/\t/g' \
+    | sed 's,",,g' \
+    > /tmp/nodejs-inventory.csv
+
+echo 'Check /tmp/nodejs-inventory.csv to see the report.'
