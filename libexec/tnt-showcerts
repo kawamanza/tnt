@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Usage: tnt showcerts <hostname>
+# Summary: Displays web-server certificates chain
+
+if [ -z "$1" ]; then
+    tnt help showcerts
+    exit 0
+fi
+
+set -x
+
+openssl s_client -showcerts -connect $1:443
