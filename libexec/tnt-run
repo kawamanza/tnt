@@ -27,6 +27,9 @@ if [ "$#" -eq 0 ]; then
     exit 0
 fi
 
-set -x
+if [ "$1" == "-" ]; then
+    shift
+    set -x
+fi
 
 $@
