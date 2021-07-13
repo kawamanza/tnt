@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+_known_profiles() {
+    echo "Known profiles:"
+    ls ~/.tntrun-* | cut -d'-' -f2 | sed 's,^,- ,'
+}
+
+die() {
+    echo $1 1>&2
+    exit 1
+}
+
+if [ "$#" -eq 0 ] || [ ! -f ~/.tntrun-$1 ]; then
+    _known_profiles
+    exit 1
+fi
+
+source ~/.tntrun-$1
+
+declare PROFILE=$1
+
+shift
+
+if [ "$#" -eq 0 ]; then
+    echo "Known subcommands:"
+    cat ~/.tntrun-$PROFILE | grep -e '()\s*{' | sed 's,()\s*{,,'
+    exit 0
+fi
+
+set -x
+
+$@
