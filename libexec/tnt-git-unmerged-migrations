@@ -5,7 +5,7 @@ declare UNMERGED_BRANCHES=$(git branch -r --no-merged $DESTINATION_BRANCH | grep
 declare CREATED_MIGRATIONS
 
 for f in $(echo "$UNMERGED_BRANCHES"); do
-	CREATED_MIGRATIONS=$(git diff --summary $(git merge-base --fork-point $DESTINATION_BRANCH $f)..$f -- db/migrate/ | grep -v 'delete mode')
+	CREATED_MIGRATIONS=$(git diff --summary $(git merge-base --fork-point $DESTINATION_BRANCH $f)..$f -- ${MIGRATION_FOLDER:-db/migrate/} | grep -v 'delete mode')
 	if [ ! -z "$CREATED_MIGRATIONS" ]; then
 		echo + $f \($(git --no-pager show -s --format='%an <%ae>' $f)\)
 		echo "$CREATED_MIGRATIONS"
