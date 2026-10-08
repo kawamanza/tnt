@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Usage: tnt codesearch
+# Summary: Interactive text search by file extension, with history of recent runs
+
+SEARCH_HIST_FILE=${SEARCH_HIST_FILE:-$HOME/.codesearch_history}
+SEARCH_HIST_MAX=${SEARCH_HIST_MAX:-10}
+
+code-search() {
+  local ext='' text='' exclude='' d choice='' line n=0 sep=$'\x1f'
+  local -a prune_args=()
+
+  # 1. Show history (most recent first), if any
+  if [ -s "$SEARCH_HIST_FILE" ]; then
+    echo "Recent searches:"
+    while IFS="$sep" read -r ext text exclude; do
+      n=$((n + 1))
+      case "$exclude" in
+        '') d='default' ;;
+        -)  d='none' ;;
+        *)  d=$exclude ;;
+      esac
+      printf '  %2d) *.%s  "%s"  [exclude: %s]\n' "$n" "$ext" "$text" "$d"
+    done < "$SEARCH_HIST_FILE"
+    printf 'Choose a number (Enter = new search): '; read -r choice
+  fi
+
+  # 2. Load the chosen search or prompt for a new one
+  case "$choice" in
+    '') ;;
+    *[!0-9]*) echo "Invalid option; starting a new search." >&2; choice='' ;;
+    *) if [ "$choice" -lt 1 ] || [ "$choice" -gt "$n" ]; then
+         echo "Invalid option; starting a new search." >&2; choice=''
+       fi ;;
+  esac
+
+  if [ -n "$choice" ]; then
+    line=$(sed -n "${choice}p" "$SEARCH_HIST_FILE")
+    IFS="$sep" read -r ext text exclude <<< "$line"
+  else
+    ext='' text='' exclude=''
+    printf 'Extension (e.g. js, py): '; read -r ext
+    printf 'Text to search: '; read -r text
+    printf 'Folders to exclude (space or comma; Enter = default; - = none): '; read -r exclude
+  fi
+
+  ext=${ext#.}
+  if [ -z "$ext" ] || [ -z "$text" ]; then
+    echo "Extension and text are required." >&2; return 1
+  fi
+
+  # 3. Save at the top of history, without duplicates, keeping only the last N
+  line="$ext$sep$text$sep$exclude"
+  {
+    printf '%s\n' "$line"
+    [ -f "$SEARCH_HIST_FILE" ] && grep -vxF -- "$line" "$SEARCH_HIST_FILE"
+  } | head -n "$SEARCH_HIST_MAX" > "$SEARCH_HIST_FILE.tmp" && mv "$SEARCH_HIST_FILE.tmp" "$SEARCH_HIST_FILE"
+
+  # 4. Default exclusions per extension
+  if [ -z "$exclude" ]; then
+    case "$ext" in
+      js|jsx|ts|tsx|mjs|cjs|vue|svelte|css|scss|sass|less|html)
+        exclude='node_modules dist build out coverage .next .nuxt .svelte-kit .turbo .cache' ;;
+      py)
+        exclude='venv .venv env __pycache__ build dist .tox .mypy_cache .pytest_cache *.egg-info' ;;
+      java|kt|kts|scala|groovy)
+        exclude='target build out .gradle .idea' ;;
+      cs|fs|vb|razor|cshtml)
+        exclude='bin obj packages .vs' ;;
+      go)     exclude='vendor bin' ;;
+      rs)     exclude='target' ;;
+      php)    exclude='vendor node_modules storage cache' ;;
+      rb|erb) exclude='vendor .bundle tmp log coverage' ;;
+      dart)   exclude='.dart_tool build' ;;
+    esac
+    exclude=".git $exclude"
+    printf 'Excluding: %s\n' "$exclude" >&2
+  elif [ "$exclude" = "-" ]; then
+    exclude=''
+  fi
+
+  # 5. Build the -prune expression and run
+  while read -r d; do
+    d=${d%/}
+    [ -z "$d" ] && continue
+    case "$d" in
+      */*) prune_args+=( -path "./${d#./}" -prune -o ) ;;
+      *)   prune_args+=( -type d -name "$d" -prune -o ) ;;
+    esac
+  done < <(printf '%s\n' "$exclude" | tr ', ' '\n\n')
+
+  find . "${prune_args[@]}" -type f -name "*.$ext" -print0 | xargs -0 grep -nsH --color=auto -- "$text"
+}
+code-search
