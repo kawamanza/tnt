@@ -2,7 +2,8 @@
 # Usage: tnt codesearch
 # Summary: Interactive text search by file extension, with history of recent runs
 
-SEARCH_HIST_FILE=${SEARCH_HIST_FILE:-$HOME/.codesearch_history}
+SEARCH_HIST_DIR=$( [ -d .git/local ] && echo .git/local || echo $HOME )
+SEARCH_HIST_FILE=${SEARCH_HIST_FILE:-$SEARCH_HIST_DIR/.codesearch_history}
 SEARCH_HIST_MAX=${SEARCH_HIST_MAX:-10}
 
 code-search() {
